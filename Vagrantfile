@@ -4,18 +4,13 @@ Vagrant.configure("2") do |config|
 
  config.vm.provider "virtualbox" do |vb|
    vb.memory = "4096"
-   vb.cpus = "2"
+   vb.cpus = "3"
  end
-       
+  config.vm.hostname = "router"      # Name needs to be present for fleet server to work properly out of the box
   # Kibana port forwarding
   config.vm.network "forwarded_port", guest: 5601, host: 5601
   
-  # Updating the system
-  config.vm.provision "shell", inline: <<-SHELL
-    sudo apt-get update
-    sudo apt-get full-upgrade -y
-    sudo apt remove multipath-tools -y  #we don't have devices for this daemon and it just spams in log-files
-  SHELL
+  
   
   # Elasticsearch
   config.vm.provision "shell", inline: <<-SHELL
@@ -51,12 +46,29 @@ Vagrant.configure("2") do |config|
     #Elastic-agent + fleet server
     config.vm.provision "shell", inline: <<-SHELL
       sudo apt-get install jq -y #JSON text filter
-      wget https://artifacts.elastic.co/downloads/beats/elastic-agent/elastic-agent-7.15.2-linux-x86_64.tar.gz
-      tar -xzf elastic-agent-7.15.2-linux-x86_64.tar.gz
+      #wget https://artifacts.elastic.co/downloads/beats/elastic-agent/elastic-agent-7.15.2-linux-x86_64.tar.gz
+      #tar -xzf elastic-agent-7.15.2-linux-x86_64.tar.gz
+      wget https://artifacts.elastic.co/downloads/beats/elastic-agent/elastic-agent-7.17.0-linux-x86_64.tar.gz
+      tar -xzf elastic-agent-7.17.0-linux-x86_64.tar.gz
 
       # cd elastic-agent-7.15.2-linux-x86_64
-      # sudo ./elastic-agent install -f --fleet-server-es=http://localhost:9200 \
-      # --fleet-server-service-token=$(curl -k -u "elastic:$(cat /home/vagrant/elasticpass | sed 's/PASSWORD/\\n/g' | grep "elastic =" | awk {'print $3'})" \
-      # -X POST http://localhost:5601/api/fleet/service-tokens --header 'kbn-xsrf: true' | jq | grep value | awk {' print $2 '} | tr -d '"')
+      # For manual installation first log in and create a fleet from kibana
+      # !!! Replace sed 's/PASSWORD/\\n/g' with sed 's/PASSWORD/\n/g' for manual fleet creation !!!
+      #  sudo ./elastic-agent install -f --fleet-server-es=http://localhost:9200 \
+      #  --fleet-server-service-token=$(curl -k -u "elastic:$(cat /home/vagrant/elasticpass | sed 's/PASSWORD/\\n/g' | grep "elastic =" | awk {'print $3'})" \
+      #  -X POST http://localhost:5601/api/fleet/service-tokens --header 'kbn-xsrf: true' | jq | grep value | awk {' print $2 '} | tr -d '"')
     SHELL
+
+
+    # Updating the system
+  config.vm.provision "shell", inline: <<-SHELL
+    sudo apt remove multipath-tools -y  #we don't have devices for this daemon and it just spams in log-files
+    sudo apt-get update
+    sudo apt-get full-upgrade -y
+  SHELL
+
+  config.vm.provision "file", source: "vagrant.pub", destination: "/home/vagrant/vagrant.pub"  #default vagrant key
+
 end
+
+#To make a box, don't forget to import a vagrant.pub before exiting from ssh session.
