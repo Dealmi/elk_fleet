@@ -1,7 +1,5 @@
-#server.name: 'lab1'
 server.host: '0.0.0.0'
 server.port: 5601
-
 
 elasticsearch.hosts: ['http://127.0.0.1:9200']
 elasticsearch.username: 'kibana_system'
